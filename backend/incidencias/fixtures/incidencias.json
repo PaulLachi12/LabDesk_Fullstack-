@@ -1,0 +1,117 @@
+[
+  {
+    "model": "incidencias.incidencia",
+    "pk": 1,
+    "fields": {
+      "titulo": "PC no enciende",
+      "descripcion": "El equipo de la mesa 04 no muestra señal al presionar el botón de encendido.",
+      "categoria": "hardware",
+      "prioridad": "alta",
+      "estado": "pendiente",
+      "creado_en": "2026-11-13T14:15:00-05:00"
+    }
+  },
+  {
+    "model": "incidencias.incidencia",
+    "pk": 2,
+    "fields": {
+      "titulo": "Python no abre",
+      "descripcion": "El intérprete se cierra al iniciarlo desde el acceso directo del escritorio.",
+      "categoria": "software",
+      "prioridad": "media",
+      "estado": "en_proceso",
+      "creado_en": "2026-11-13T13:40:00-05:00"
+    }
+  },
+  {
+    "model": "incidencias.incidencia",
+    "pk": 3,
+    "fields": {
+      "titulo": "Wi-Fi lento",
+      "descripcion": "La conexión se interrumpe durante las clases en el aula del fondo.",
+      "categoria": "red",
+      "prioridad": "alta",
+      "estado": "pendiente",
+      "creado_en": "2026-11-13T12:05:00-05:00"
+    }
+  },
+  {
+    "model": "incidencias.incidencia",
+    "pk": 4,
+    "fields": {
+      "titulo": "Teclado defectuoso",
+      "descripcion": "La tecla de espacio no responde con regularidad en la estación 02.",
+      "categoria": "hardware",
+      "prioridad": "baja",
+      "estado": "resuelto",
+      "creado_en": "2026-11-13T10:20:00-05:00"
+    }
+  },
+  {
+    "model": "incidencias.incidencia",
+    "pk": 5,
+    "fields": {
+      "titulo": "Navegador desactualizado",
+      "descripcion": "Se actualizó el navegador de la estación 07 y se comprobó el acceso a la plataforma.",
+      "categoria": "software",
+      "prioridad": "media",
+      "estado": "resuelto",
+      "creado_en": "2026-11-13T09:10:00-05:00"
+    }
+  },
+  {
+    "model": "incidencias.actividadincidencia",
+    "pk": 1,
+    "fields": {
+      "incidencia": 1,
+      "tipo": "creacion",
+      "autor": "Equipo de soporte",
+      "detalle": "Incidencia registrada.",
+      "creado_en": "2026-11-13T14:15:00-05:00"
+    }
+  },
+  {
+    "model": "incidencias.actividadincidencia",
+    "pk": 2,
+    "fields": {
+      "incidencia": 2,
+      "tipo": "creacion",
+      "autor": "Equipo de soporte",
+      "detalle": "Incidencia registrada.",
+      "creado_en": "2026-11-13T13:40:00-05:00"
+    }
+  },
+  {
+    "model": "incidencias.actividadincidencia",
+    "pk": 3,
+    "fields": {
+      "incidencia": 3,
+      "tipo": "creacion",
+      "autor": "Equipo de soporte",
+      "detalle": "Incidencia registrada.",
+      "creado_en": "2026-11-13T12:05:00-05:00"
+    }
+  },
+  {
+    "model": "incidencias.actividadincidencia",
+    "pk": 4,
+    "fields": {
+      "incidencia": 4,
+      "tipo": "creacion",
+      "autor": "Equipo de soporte",
+      "detalle": "Incidencia registrada.",
+      "creado_en": "2026-11-13T10:20:00-05:00"
+    }
+  },
+  {
+    "model": "incidencias.actividadincidencia",
+    "pk": 5,
+    "fields": {
+      "incidencia": 5,
+      "tipo": "creacion",
+      "autor": "Equipo de soporte",
+      "detalle": "Incidencia registrada.",
+      "creado_en": "2026-11-13T09:10:00-05:00"
+    }
+  }
+]
