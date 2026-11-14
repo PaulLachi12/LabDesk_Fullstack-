@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ActividadIncidencia, Incidencia
+from .models import ActividadIncidencia, Comentario, Incidencia
 
 
 class ActividadIncidenciaInline(admin.TabularInline):
@@ -7,12 +7,19 @@ class ActividadIncidenciaInline(admin.TabularInline):
     extra = 0
     readonly_fields = ('tipo', 'autor', 'detalle', 'creado_en')
 
+
+class ComentarioInline(admin.TabularInline):
+    model = Comentario
+    extra = 0
+    readonly_fields = ('autor', 'detalle', 'creado_en')
+
+
 @admin.register(Incidencia)
 class IncidenciaAdmin(admin.ModelAdmin):
     list_display = (
         'titulo', 'categoria', 'prioridad', 'estado',
-        'responsable', 'fecha_limite', 'creado_en',
+        'responsable', 'ubicacion', 'fecha_limite', 'creado_en',
     )
     list_filter = ('categoria', 'prioridad', 'estado')
-    search_fields = ('titulo', 'descripcion', 'responsable', 'aula_equipo')
-    inlines = (ActividadIncidenciaInline,)
+    search_fields = ('titulo', 'descripcion', 'responsable', 'ubicacion')
+    inlines = (ActividadIncidenciaInline, ComentarioInline)

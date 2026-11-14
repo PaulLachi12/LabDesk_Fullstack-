@@ -3,7 +3,8 @@
 Sistema CRUD de incidencias del laboratorio (actividad de clase).
 
 Incluye búsqueda, filtros y orden, exportación Excel `.xlsx`, paginación, asignación
-de responsable, aula/equipo, fecha límite, historial y cuentas con permisos por rol.
+de responsable, ubicación, fecha límite con alertas, dashboard de métricas reales,
+comentarios e historial y cuentas con permisos por rol.
 
 ## 1. Backend (terminal A)
 
@@ -50,10 +51,12 @@ El frontend usa cookies de sesión y CSRF; no almacena credenciales ni tokens en
 ## 3. Roles y seguimiento
 
 Los solicitantes solo ven y actualizan incidencias propias, y pueden añadir
-comentarios. Soporte puede consultar y actualizar todas, pero no eliminarlas.
+comentarios asociados a su cuenta. Soporte puede consultar y actualizar todas,
+pero no eliminarlas.
 Administración puede gestionar cualquier incidencia. El historial registra la
 cuenta autenticada, no un nombre editable por el navegador. El acceso a la API
-requiere sesión.
+requiere sesión. La migración de ubicación y comentarios conserva los datos y
+las fechas de los registros anteriores.
 
 ## 4. Pruebas
 Pruebas automatizadas:

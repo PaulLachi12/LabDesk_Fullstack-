@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 class Incidencia(models.Model):
     CATEGORIAS = [
@@ -30,7 +31,7 @@ class Incidencia(models.Model):
         max_length=20, choices=ESTADOS, default='pendiente'
     )
     responsable = models.CharField(max_length=80, blank=True)
-    aula_equipo = models.CharField(max_length=100, blank=True)
+    ubicacion = models.CharField(max_length=100, blank=True)
     fecha_limite = models.DateField(null=True, blank=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     creador = models.ForeignKey(
@@ -68,3 +69,20 @@ class ActividadIncidencia(models.Model):
 
     def __str__(self):
         return f'{self.get_tipo_display()}: {self.incidencia}'
+
+
+class Comentario(models.Model):
+    incidencia = models.ForeignKey(
+        Incidencia,
+        on_delete=models.CASCADE,
+        related_name='comentarios',
+    )
+    autor = models.CharField(max_length=80)
+    detalle = models.TextField()
+    creado_en = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ['-creado_en', '-id']
+
+    def __str__(self):
+        return f'Comentario de {self.autor}: {self.incidencia}'

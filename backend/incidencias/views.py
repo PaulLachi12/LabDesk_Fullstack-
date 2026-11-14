@@ -1,7 +1,7 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import ActividadIncidencia, Incidencia
+from .models import ActividadIncidencia, Comentario, Incidencia
 from .permissions import IncidenciaPermission, user_role
 from .serializers import (
     ActividadIncidenciaSerializer,
@@ -25,25 +25,43 @@ class IncidenciaViewSet(viewsets.ModelViewSet):
             or self.request.user.get_username()
         )[:80]
 
-    @action(detail=True, methods=['get', 'post'], url_path='actividades')
+    @action(detail=True, methods=['get'], url_path='actividades')
     def actividades(self, request, pk=None):
         incidencia = self.get_object()
+        actividades = list(incidencia.actividades.all())
+        comentarios = list(incidencia.comentarios.all())
+        historial = sorted(
+            [*actividades, *comentarios],
+            key=lambda item: (item.creado_en, item.pk),
+            reverse=True,
+        )
+        data = []
 
+        for item in historial:
+            if isinstance(item, ActividadIncidencia):
+                serializer = ActividadIncidenciaSerializer(item)
+            else:
+                serializer = ComentarioIncidenciaSerializer(item)
+            data.append(serializer.data)
+
+        return Response(data)
+
+    @action(detail=True, methods=['get', 'post'], url_path='comentarios')
+    def comentarios(self, request, pk=None):
+        incidencia = self.get_object()
         if request.method == 'GET':
-            actividades = incidencia.actividades.all()
-            serializer = ActividadIncidenciaSerializer(actividades, many=True)
+            comentarios = incidencia.comentarios.all()
+            serializer = ComentarioIncidenciaSerializer(comentarios, many=True)
             return Response(serializer.data)
 
         serializer = ComentarioIncidenciaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        actividad = ActividadIncidencia.objects.create(
+        comentario = serializer.save(
             incidencia=incidencia,
-            tipo='comentario',
             autor=self.actor_name(),
-            detalle=serializer.validated_data['detalle'],
         )
         return Response(
-            ActividadIncidenciaSerializer(actividad).data,
+            ComentarioIncidenciaSerializer(comentario).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -65,7 +83,7 @@ class IncidenciaViewSet(viewsets.ModelViewSet):
             'prioridad': ('prioridad', incidencia.prioridad),
             'estado': ('estado', incidencia.estado),
             'responsable': ('responsable', incidencia.responsable),
-            'aula_equipo': ('aula o equipo', incidencia.aula_equipo),
+            'ubicacion': ('ubicación', incidencia.ubicacion),
             'fecha_limite': ('fecha límite', incidencia.fecha_limite),
         }
         cambios = [

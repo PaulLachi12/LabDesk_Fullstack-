@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   filterAndSortIssues,
+  getDeadlineStatus,
   getRequestError,
   paginate,
   readApiError,
@@ -15,7 +16,7 @@ const EMPTY_FORM = {
   prioridad: 'media',
   estado: 'pendiente',
   responsable: '',
-  aula_equipo: '',
+  ubicacion: '',
   fecha_limite: '',
 }
 const PAGE_SIZE = 5
@@ -161,12 +162,6 @@ function formatDueDate(value) {
   }).format(new Date(`${value}T00:00:00Z`))
 }
 
-function getLocalDate() {
-  const date = new Date()
-  date.setMinutes(date.getMinutes() - date.getTimezoneOffset())
-  return date.toISOString().slice(0, 10)
-}
-
 function ActivityPanel({ incidencia, onCommentAdded }) {
   const [actividades, setActividades] = useState([])
   const [detalle, setDetalle] = useState('')
@@ -174,6 +169,7 @@ function ActivityPanel({ incidencia, onCommentAdded }) {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
   const activityApi = `${INCIDENCIAS_API}${incidencia.id}/actividades/`
+  const commentsApi = `${INCIDENCIAS_API}${incidencia.id}/comentarios/`
 
   async function cargarActividades() {
     setCargando(true)
@@ -194,7 +190,7 @@ function ActivityPanel({ incidencia, onCommentAdded }) {
     setGuardando(true)
     setError('')
     try {
-      const response = await apiFetch(activityApi, {
+      const response = await apiFetch(commentsApi, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ detalle }),
@@ -279,6 +275,7 @@ export default function App() {
   const [guardando, setGuardando] = useState(false)
   const [exportando, setExportando] = useState(false)
   const [accionId, setAccionId] = useState(null)
+  const [ahora, setAhora] = useState(() => new Date())
   const searchRef = useRef(null)
 
   async function cargar() {
@@ -328,6 +325,12 @@ export default function App() {
   useEffect(() => {
     if (usuario) cargar()
     else setDatos([])
+  }, [usuario])
+
+  useEffect(() => {
+    if (!usuario) return undefined
+    const intervalId = window.setInterval(() => setAhora(new Date()), 60_000)
+    return () => window.clearInterval(intervalId)
   }, [usuario])
 
   useEffect(() => {
@@ -394,7 +397,7 @@ export default function App() {
       prioridad: item.prioridad,
       estado: item.estado,
       responsable: item.responsable || '',
-      aula_equipo: item.aula_equipo || '',
+      ubicacion: item.ubicacion || '',
       fecha_limite: item.fecha_limite || '',
     })
     document.getElementById('issue-title')?.focus({ preventScroll: true })
@@ -463,6 +466,13 @@ export default function App() {
   const pendientes = datos.filter(item => item.estado === 'pendiente').length
   const enProceso = datos.filter(item => item.estado === 'en_proceso').length
   const resueltas = datos.filter(item => item.estado === 'resuelto').length
+  const vencidas = datos.filter(item => getDeadlineStatus(item, ahora) === 'overdue').length
+  const porcentajeResuelto = datos.length ? Math.round((resueltas / datos.length) * 100) : 0
+  const distribucionPrioridad = Object.entries(PRIORIDADES).map(([value, label]) => ({
+    value,
+    label,
+    count: datos.filter(item => item.prioridad === value).length,
+  }))
   const fechaHoy = new Intl.DateTimeFormat('es-PE', {
     weekday: 'long',
     day: 'numeric',
@@ -588,6 +598,39 @@ export default function App() {
             </button>
           </section>
 
+          {apiDisponible && (
+            <section className="dashboard-summary" aria-label="Resumen de incidencias">
+              <div className="dashboard-stats">
+                {[
+                  ['Total', datos.length],
+                  ['Pendientes', pendientes],
+                  ['En proceso', enProceso],
+                  ['Resueltas', resueltas],
+                  ['Vencidas', vencidas],
+                  ['% resuelto', `${porcentajeResuelto}%`],
+                ].map(([label, value], index) => (
+                  <div className={`dashboard-stat${index === 4 ? ' overdue-stat' : ''}`} key={label + index}>
+                    <span>{label}</span>
+                    <strong>{value}</strong>
+                  </div>
+                ))}
+              </div>
+              <div className="priority-summary">
+                <span className="priority-summary-title">Prioridad</span>
+                <div className="priority-breakdown">
+                  {distribucionPrioridad.map(item => (
+                    <div className="priority-summary-item" key={item.value} aria-label={`${item.label}: ${item.count} incidencias`}>
+                      <div><span>{item.label}</span><strong>{item.count}</strong></div>
+                      <span className={`priority-meter ${item.value}`}>
+                        <span style={{ width: `${datos.length ? (item.count / datos.length) * 100 : 0}%` }} />
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
           {error && (
             <div className="error-banner" role="alert">
               <span>{error}</span>
@@ -692,7 +735,9 @@ export default function App() {
                       </button>
                     )}
                   </div>
-              ) : paginaActual.items.map(item => (
+              ) : paginaActual.items.map(item => {
+                const deadlineStatus = getDeadlineStatus(item, ahora)
+                return (
                   <article className="issue-item" key={item.id}>
                     <div className="issue-main">
                       <div className="issue-title-line">
@@ -705,10 +750,14 @@ export default function App() {
                         <span>#{String(item.id).padStart(3, '0')}</span>
                         <span className="meta-separator" />
                         <span>{formatCreatedAt(item.creado_en)}</span>
-                        {item.aula_equipo && <><span className="meta-separator" /><span>{item.aula_equipo}</span></>}
+                        {item.ubicacion && <><span className="meta-separator" /><span>{item.ubicacion}</span></>}
                         {item.fecha_limite && (
-                          <span className={`due-date ${item.fecha_limite < getLocalDate() && item.estado !== 'resuelto' ? 'overdue' : ''}`}>
-                            Límite: {formatDueDate(item.fecha_limite)}
+                          <span className={`due-date ${deadlineStatus || ''}`}>
+                            {deadlineStatus === 'overdue'
+                              ? 'Vencida'
+                              : deadlineStatus === 'due_soon'
+                                ? 'Próxima a vencer'
+                                : 'Límite'}: {formatDueDate(item.fecha_limite)}
                           </span>
                         )}
                       </div>
@@ -741,7 +790,8 @@ export default function App() {
                     </div>
                     <ActivityPanel incidencia={item} onCommentAdded={() => setAviso('Nota de seguimiento guardada.')} />
                   </article>
-                ))}
+                )
+              })}
               </div>
 
               {!cargando && filtrados.length > 0 && (
@@ -829,8 +879,8 @@ export default function App() {
                   <label className="form-label" htmlFor="issue-assignee">Responsable</label>
                   <input id="issue-assignee" name="responsable" maxLength="80" value={form.responsable} onChange={cambiar} placeholder="Persona encargada (opcional)" />
 
-                  <label className="form-label" htmlFor="issue-location">Aula o equipo</label>
-                  <input id="issue-location" name="aula_equipo" maxLength="100" value={form.aula_equipo} onChange={cambiar} placeholder="Ej. Aula 2 · PC 04" />
+                  <label className="form-label" htmlFor="issue-location">Ubicación</label>
+                  <input id="issue-location" name="ubicacion" maxLength="100" value={form.ubicacion} onChange={cambiar} placeholder="Ej. Aula 2 · PC 04" />
 
                   <label className="form-label" htmlFor="issue-due-date">Fecha límite</label>
                   <input id="issue-due-date" name="fecha_limite" type="date" value={form.fecha_limite} onChange={cambiar} />

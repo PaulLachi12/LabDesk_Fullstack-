@@ -5,6 +5,7 @@ import { buildExcel } from '../src/excel.js'
 import {
   filterAndSortIssues,
   getApiError,
+  getDeadlineStatus,
   getRequestError,
   paginate,
   readApiError,
@@ -27,7 +28,7 @@ const issues = [
     estado: 'pendiente',
     creado_en: '2026-11-13T10:00:00Z',
     responsable: 'Ana',
-    aula_equipo: 'Aula 2',
+    ubicacion: 'Aula 2',
   },
 ]
 
@@ -64,6 +65,35 @@ test('paginate clamps the requested page after filters reduce the results', () =
   assert.deepEqual(result.items.map(issue => issue.id), [2])
 })
 
+test('getDeadlineStatus distinguishes overdue, due soon, resolved and invalid dates', () => {
+  const now = new Date(2026, 10, 20, 12)
+
+  assert.equal(getDeadlineStatus({
+    fecha_limite: '2026-11-19',
+    estado: 'pendiente',
+  }, now), 'overdue')
+  assert.equal(getDeadlineStatus({
+    fecha_limite: '2026-11-20',
+    estado: 'en_proceso',
+  }, now), 'due_soon')
+  assert.equal(getDeadlineStatus({
+    fecha_limite: '2026-11-20',
+    estado: 'resuelto',
+  }, now), null)
+  assert.equal(getDeadlineStatus({
+    fecha_limite: '2026-11-22',
+    estado: 'pendiente',
+  }, now), null)
+  assert.equal(getDeadlineStatus({
+    fecha_limite: '2026-11-21',
+    estado: 'pendiente',
+  }, new Date(2026, 10, 20, 23, 59, 59, 999)), 'due_soon')
+  assert.equal(getDeadlineStatus({
+    fecha_limite: '2026-13-40',
+    estado: 'pendiente',
+  }, now), null)
+})
+
 test('buildExcel creates a readable workbook with filters, frozen headings and wrapped text', async () => {
   const issue = {
     ...issues[0],
@@ -79,6 +109,7 @@ test('buildExcel creates a readable workbook with filters, frozen headings and w
   const worksheet = workbook.getWorksheet('Incidencias')
   assert.equal(worksheet.getCell('A1').value, 'ID')
   assert.equal(worksheet.getCell('C1').value, 'Descripción')
+  assert.equal(worksheet.getCell('H1').value, 'Ubicación')
   assert.equal(worksheet.getCell('D2').value, 'Hardware')
   assert.equal(worksheet.getCell('E2').value, 'Baja')
   assert.equal(worksheet.getCell('C2').value, issue.descripcion)

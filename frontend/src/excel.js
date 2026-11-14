@@ -6,7 +6,7 @@ const COLUMNS = [
   { header: 'Prioridad', key: 'prioridad', width: 14 },
   { header: 'Estado', key: 'estado', width: 16 },
   { header: 'Responsable', key: 'responsable', width: 24 },
-  { header: 'Aula o equipo', key: 'aula_equipo', width: 25 },
+  { header: 'Ubicación', key: 'ubicacion', width: 25 },
   { header: 'Fecha límite', key: 'fecha_limite', width: 16 },
   { header: 'Fecha de creación', key: 'creado_en', width: 21 },
 ]
@@ -81,7 +81,7 @@ export async function buildExcel(issues) {
       wrappedLines(issue.titulo, 32),
       wrappedLines(issue.descripcion, 52),
       wrappedLines(issue.responsable, 22),
-      wrappedLines(issue.aula_equipo, 23),
+      wrappedLines(issue.ubicacion, 23),
     )
     row.height = Math.min(120, Math.max(26, lines * 15 + 10))
     row.eachCell(cell => {

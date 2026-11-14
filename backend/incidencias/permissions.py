@@ -31,5 +31,5 @@ class IncidenciaPermission(BasePermission):
         return (
             request.method in SAFE_METHODS
             or request.method in {'PUT', 'PATCH'}
-            or (request.method == 'POST' and view.action == 'actividades')
+            or (request.method == 'POST' and view.action == 'comentarios')
         )

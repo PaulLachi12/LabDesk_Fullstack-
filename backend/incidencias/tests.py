@@ -3,7 +3,7 @@ from django.contrib.auth.models import Group
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from .models import ActividadIncidencia, Incidencia
+from .models import ActividadIncidencia, Comentario, Incidencia
 
 
 class IncidenciaApiTests(APITestCase):
@@ -40,7 +40,7 @@ class IncidenciaApiTests(APITestCase):
                 'prioridad': 'media',
                 'estado': 'pendiente',
                 'responsable': 'Ana',
-                'aula_equipo': 'Aula 2',
+                'ubicacion': 'Aula 2',
                 'fecha_limite': '2026-11-20',
                 'creador': 9999,
             },
@@ -49,7 +49,7 @@ class IncidenciaApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['responsable'], 'Ana')
-        self.assertEqual(response.data['aula_equipo'], 'Aula 2')
+        self.assertEqual(response.data['ubicacion'], 'Aula 2')
         self.assertEqual(response.data['fecha_limite'], '2026-11-20')
         self.assertEqual(response.data['creador'], self.support.pk)
         self.assertTrue(
@@ -86,7 +86,7 @@ class IncidenciaApiTests(APITestCase):
 
     def test_follow_up_comment_is_returned_in_activity_history(self):
         response = self.client.post(
-            f'{self.url}actividades/',
+            f'{self.url}comentarios/',
             {'detalle': 'Se revisó el cableado.'},
             format='json',
         )
@@ -94,14 +94,24 @@ class IncidenciaApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['tipo'], 'comentario')
         self.assertEqual(response.data['autor'], 'soporte')
+        self.assertTrue(
+            Comentario.objects.filter(
+                incidencia=self.incidencia,
+                autor='soporte',
+                detalle='Se revisó el cableado.',
+            ).exists()
+        )
 
         history = self.client.get(f'{self.url}actividades/')
         self.assertEqual(history.status_code, status.HTTP_200_OK)
         self.assertEqual(len(history.data), 1)
+        comments = self.client.get(f'{self.url}comentarios/')
+        self.assertEqual(comments.status_code, status.HTTP_200_OK)
+        self.assertEqual(comments.data[0]['detalle'], 'Se revisó el cableado.')
 
     def test_follow_up_comment_requires_a_detail(self):
         response = self.client.post(
-            f'{self.url}actividades/',
+            f'{self.url}comentarios/',
             {'detalle': ' '},
             format='json',
         )
@@ -115,7 +125,7 @@ class IncidenciaApiTests(APITestCase):
         listing = self.client.get('/api/incidencias/')
         update = self.client.patch(self.url, {'estado': 'resuelto'}, format='json')
         comment = self.client.post(
-            f'{self.url}actividades/',
+            f'{self.url}comentarios/',
             {'detalle': 'Comentario sin sesión.'},
             format='json',
         )
@@ -153,11 +163,23 @@ class IncidenciaApiTests(APITestCase):
             {'estado': 'resuelto'},
             format='json',
         )
+        own_comment = self.client.post(
+            f'/api/incidencias/{own_issue.pk}/comentarios/',
+            {'detalle': 'Sigo pendiente de la revisión.'},
+            format='json',
+        )
+        other_comment = self.client.post(
+            f'/api/incidencias/{other_issue.pk}/comentarios/',
+            {'detalle': 'No debería acceder a este registro.'},
+            format='json',
+        )
 
         self.assertEqual([item['id'] for item in listing.data], [own_issue.pk])
         self.assertEqual(own_update.status_code, status.HTTP_200_OK)
         self.assertEqual(other_read.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(other_update.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(own_comment.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(other_comment.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_support_can_edit_any_incident_but_cannot_delete(self):
         reporter = get_user_model().objects.create_user(

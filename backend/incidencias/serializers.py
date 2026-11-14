@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ActividadIncidencia, Incidencia
+from .models import ActividadIncidencia, Comentario, Incidencia
 
 class IncidenciaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,9 +28,15 @@ class ActividadIncidenciaSerializer(serializers.ModelSerializer):
 
 
 class ComentarioIncidenciaSerializer(serializers.ModelSerializer):
+    tipo = serializers.SerializerMethodField()
+
     class Meta:
-        model = ActividadIncidencia
-        fields = ['detalle']
+        model = Comentario
+        fields = ['id', 'tipo', 'autor', 'detalle', 'creado_en']
+        read_only_fields = ['id', 'tipo', 'autor', 'creado_en']
+
+    def get_tipo(self, instance):
+        return 'comentario'
 
     def validate_detalle(self, value):
         value = value.strip()

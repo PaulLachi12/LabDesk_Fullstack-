@@ -8,7 +8,7 @@ export function filterAndSortIssues(issues, filters) {
       issue.titulo,
       issue.descripcion,
       issue.responsable,
-      issue.aula_equipo,
+      issue.ubicacion,
     ].join(' ').toLocaleLowerCase('es')
 
     return text.includes(search) &&
@@ -30,6 +30,26 @@ export function filterAndSortIssues(issues, filters) {
         return new Date(second.creado_en) - new Date(first.creado_en)
     }
   })
+}
+
+export function getDeadlineStatus(issue, now = new Date()) {
+  if (!issue.fecha_limite || issue.estado === 'resuelto') return null
+
+  const [year, month, day] = issue.fecha_limite.split('-').map(Number)
+  const deadline = new Date(year, month - 1, day, 23, 59, 59, 999)
+  if (
+    Number.isNaN(deadline.getTime()) ||
+    deadline.getFullYear() !== year ||
+    deadline.getMonth() !== month - 1 ||
+    deadline.getDate() !== day
+  ) {
+    return null
+  }
+
+  const remaining = deadline.getTime() - now.getTime()
+  if (remaining < 0) return 'overdue'
+  if (remaining <= 24 * 60 * 60 * 1000) return 'due_soon'
+  return null
 }
 
 export function paginate(items, requestedPage, pageSize) {
